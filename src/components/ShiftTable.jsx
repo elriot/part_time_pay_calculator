@@ -5,8 +5,8 @@ export default function ShiftTable({ currency, jobs, shifts, onUpdate, onAdd, on
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="text-left text-gray-600">
-          <tr>
+        <thead className="text-left text-gray-600 dark:text-gray-300">
+          <tr className="border-t border-gray-200 dark:border-gray-800">
             <th className="py-2 pr-2">날짜</th>
             <th className="py-2 pr-2">근무처</th>
             <th className="py-2 pr-2">시작</th>
