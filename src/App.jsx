@@ -2,6 +2,7 @@ import { useMemo, useReducer } from "react";
 import Settings from "./components/Settings";
 import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
+import CsvControls from "./components/CsvControls";
 import "./App.css"
 
 const uid = () =>
@@ -48,6 +49,14 @@ function reducer(state, action) {
         ...state,
         shifts: state.shifts.map((s) => (s.id === action.id ? { ...s, ...action.patch } : s)),
       };
+    case "replaceAllShifts": {
+      const next = Array.isArray(action.value) ? action.value : [];
+      return { ...state, shifts: next };
+    }
+    case "appendShifts": {
+      const next = Array.isArray(action.value) ? action.value : [];
+      return { ...state, shifts: [...state.shifts, ...next] };
+    }			
     default:
       return state;
   }
@@ -99,15 +108,32 @@ export default function App() {
     return { perShift, byJob, totals };
   }, [shifts]);
 
+	// Import 콜백들
+	const handleImportReplace = (imported) => {
+		dispatch({ type: "replaceAllShifts", value: imported });
+	};
+	const handleImportAppend = (imported) => {
+		dispatch({ type: "appendShifts", value: imported });
+	};
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
-          </div>
-        </header>
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
+          <p className="text-sm text-gray-600">데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산</p>
+        </div>
 
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-xs text-gray-600">project: part_time_pay_calculator</div>
+          <CsvControls
+            shifts={shifts}
+            onImportReplace={handleImportReplace}
+            onImportAppend={handleImportAppend}
+          />
+        </div>
+      </header>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-1">
             <Settings
