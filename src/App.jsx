@@ -1,7 +1,8 @@
-import React, { useMemo, useReducer } from "react";
+import { useMemo, useReducer } from "react";
 import Settings from "./components/Settings";
 import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
+import "./App.css"
 
 const uid = () =>
   (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
@@ -104,9 +105,7 @@ export default function App() {
         <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
-            <p className="text-sm text-gray-600">데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산</p>
           </div>
-          <div className="text-xs text-gray-600">project: part_time_pay_calculator</div>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -142,10 +141,6 @@ export default function App() {
             onRemove={(id) => dispatch({ type: "removeShift", id })}
           />
         </section>
-
-        <footer className="text-xs text-gray-500 pt-2">
-          ※ 자정 이후 퇴근(익일)도 지원합니다. 금액은 소수점 둘째 자리 반올림.
-        </footer>
       </div>
     </div>
   );
