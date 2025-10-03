@@ -1,9 +1,28 @@
-import { useMemo, useReducer } from "react";
+import { useMemo, useReducer, useState, useEffect } from "react";
 import Settings from "./components/Settings";
 import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
-import CsvControls from "./components/CsvControls";
+import CsvControls from "./components/CsvControls"
 import "./App.css"
+
+const THEME_KEY = "ptpc_theme"; // 'light' | 'dark'
+function useTheme() {
+  const getInitial = () => {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "light" || saved === "dark") return saved;
+    // 시스템 선호 따라가기 (처음 한 번)
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  };
+  const [theme, setTheme] = useState(getInitial);
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme);
+    const root = document.documentElement; // <html>
+    root.classList.toggle("dark", theme === "dark");
+  }, [theme]);
+  return { theme, setTheme };
+}
 
 const uid = () =>
   (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
@@ -75,6 +94,9 @@ const minutesBetween = (start, end) => {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { currency, jobs, shifts } = state;
+  const { theme, setTheme } = useTheme();
+
+   // ... 기존 useMemo, handlers 동일
 
   // 합계 계산
   const { perShift, byJob, totals } = useMemo(() => {
@@ -117,7 +139,7 @@ export default function App() {
 	};
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -127,6 +149,19 @@ export default function App() {
 
         <div className="flex flex-col items-end gap-2">
           <div className="text-xs text-gray-600">project: part_time_pay_calculator</div>
+            <div className="flex gap-2 items-center">
+              <button
+                className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                title="Toggle dark mode"
+                aria-pressed={theme === "dark"}
+              >
+                {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+              </button>
+              <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
+                Auto-save: ON
+              </span>
+            </div>'
           <CsvControls
             shifts={shifts}
             onImportReplace={handleImportReplace}
@@ -148,7 +183,7 @@ export default function App() {
           </div>
         </div>
 
-        <section className="bg-white rounded-2xl shadow p-4 space-y-3">
+        <section className="bg-white dark:bg-gray-900 rounded-2xl shadow p-4 space-y-3 border border-transparent dark:border-gray-800">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">근무 기록</h2>
             <button
