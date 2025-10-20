@@ -29,14 +29,15 @@ export const STRINGS = {
     // buttons / actions
     delete: "Delete",
     exportCsv: "Export CSV",
-    importCsvReplace: "Import CSV (replace)",
-    importCsvAppend: "Import CSV (append)",
+    importCsvReplace: "Import CSV (Replace)",
+    importCsvAppend: "Import CSV (Append)",
     // footer
     footerNote: "Supports overnight shifts (crossing midnight). Amounts rounded to 2 decimals.",
     // lang toggle
     langEnglish: "🇺🇸 English",
     langKorean: "🇰🇷 한국어",
 		sortByDate: "Auto-sort",
+		thScheduledHours: "Scheduled hours",
   },
   ko: {
     appSubtitle: "데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산",
@@ -76,5 +77,6 @@ export const STRINGS = {
     langEnglish: "🇺🇸 English",
     langKorean: "🇰🇷 한국어",
 		sortByDate: "자동정렬",
+		thScheduledHours: "스케줄시간(h)",
   },
 };

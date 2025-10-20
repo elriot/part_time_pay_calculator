@@ -38,6 +38,9 @@ export default function ShiftTable({
             <th className="py-2 pr-2">{t("thStart")}</th>
             <th className="py-2 pr-2">{t("thEnd")}</th>
             <th className="py-2 pr-2">{t("thBreak")}</th>
+            {/* 새 컬럼: 스케줄 시간(휴게 전) */}
+            <th className="py-2 pr-2">{t("thScheduledHours")}</th>
+            {/* 기존 유급시간은 그대로 오른쪽에 */}
             <th className="py-2 pr-2">{t("thPaidHours")}</th>
             <th className="py-2 pr-2">{t("thRate")}</th>
             <th className="py-2 pr-2">{t("thDailyTotal")}</th>
