@@ -12,8 +12,10 @@ function useTheme() {
   const getInitial = () => {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark" : "light";
+    return window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   };
   const [theme, setTheme] = useState(getInitial);
   useEffect(() => {
@@ -24,13 +26,17 @@ function useTheme() {
 }
 
 /* Utilities 동일 */
-const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const uid = () =>
+  crypto?.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const minutesBetween = (start, end) => {
   const [sh, sm] = String(start).split(":").map(Number);
   const [eh, em] = String(end).split(":").map(Number);
-  let s = sh * 60 + sm, e = eh * 60 + em;
+  let s = sh * 60 + sm,
+    e = eh * 60 + em;
   if (e < s) e += 24 * 60;
   return e - s;
 };
@@ -53,10 +59,15 @@ function reviveState(raw) {
     if (!p || typeof p !== "object") return null;
     return {
       currency: typeof p.currency === "string" ? p.currency : "CAD",
-      jobs: p.jobs && typeof p.jobs === "object" ? { A: 20, B: 25, ...p.jobs } : { A: 20, B: 25 },
+      jobs:
+        p.jobs && typeof p.jobs === "object"
+          ? { A: 20, B: 25, ...p.jobs }
+          : { A: 20, B: 25 },
       shifts: Array.isArray(p.shifts) ? p.shifts : [],
     };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 function init(initial) {
   const raw = localStorage.getItem(LS_KEY);
@@ -65,21 +76,48 @@ function init(initial) {
 }
 function reducer(state, action) {
   switch (action.type) {
-    case "resetAll": { localStorage.removeItem(LS_KEY); return { ...initialState }; }
-    case "setCurrency": return { ...state, currency: action.value };
+    case "resetAll": {
+      localStorage.removeItem(LS_KEY);
+      return { ...initialState };
+    }
+    case "setCurrency":
+      return { ...state, currency: action.value };
     case "setJobRate": {
       const jobs = { ...state.jobs, [action.job]: Number(action.value) || 0 };
       const shifts = state.shifts.map((s) =>
-        s.job === action.job && s.rate === state.jobs[action.job] ? { ...s, rate: jobs[action.job] } : s
+        s.job === action.job && s.rate === state.jobs[action.job]
+          ? { ...s, rate: jobs[action.job] }
+          : s
       );
       return { ...state, jobs, shifts };
     }
-    case "addShift": return { ...state, shifts: [...state.shifts, emptyShift(state.jobs)] };
-    case "removeShift": return { ...state, shifts: state.shifts.filter((s) => s.id !== action.id) };
+    case "addShift":
+      return { ...state, shifts: [...state.shifts, emptyShift(state.jobs)] };
+    case "removeShift":
+      return {
+        ...state,
+        shifts: state.shifts.filter((s) => s.id !== action.id),
+      };
     case "updateShift":
-      return { ...state, shifts: state.shifts.map((s) => (s.id === action.id ? { ...s, ...action.patch } : s)) };
-    case "replaceAllShifts": return { ...state, shifts: Array.isArray(action.value) ? action.value : [] };
-    case "appendShifts": return { ...state, shifts: [...state.shifts, ...(Array.isArray(action.value) ? action.value : [])] };
+      return {
+        ...state,
+        shifts: state.shifts.map((s) =>
+          s.id === action.id ? { ...s, ...action.patch } : s
+        ),
+      };
+    case "replaceAllShifts":
+      return {
+        ...state,
+        shifts: Array.isArray(action.value) ? action.value : [],
+      };
+    case "appendShifts":
+      return {
+        ...state,
+        shifts: [
+          ...state.shifts,
+          ...(Array.isArray(action.value) ? action.value : []),
+        ],
+      };
     case "reorderShifts": {
       const { fromIndex, toIndex } = action;
       if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return state;
@@ -88,7 +126,16 @@ function reducer(state, action) {
       next.splice(toIndex, 0, moved);
       return { ...state, shifts: next };
     }
-    default: return state;
+    case "sortByDateStart": {
+      const sorted = [...state.shifts].sort((a, b) => {
+        const d = (a.date || "").localeCompare(b.date || "");
+        if (d !== 0) return d;
+        return (a.start || "").localeCompare(b.start || "");
+      });
+      return { ...state, shifts: sorted };
+    }
+    default:
+      return state;
   }
 }
 
@@ -97,21 +144,26 @@ export default function App() {
   const { currency, jobs, shifts } = state;
   const { theme, setTheme } = useTheme();
   const { t, lang, setLang } = useI18n();
-	
 
   // Auto-save
   const saveTimer = useRef(null);
   useEffect(() => {
     const payload = JSON.stringify({ currency, jobs, shifts });
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => localStorage.setItem(LS_KEY, payload), 300);
+    saveTimer.current = setTimeout(
+      () => localStorage.setItem(LS_KEY, payload),
+      300
+    );
     return () => saveTimer.current && clearTimeout(saveTimer.current);
   }, [currency, jobs, shifts]);
 
   // Calculations
   const { perShift, byJob, totals } = useMemo(() => {
     const perShift = shifts.map((s) => {
-      const workedMin = Math.max(0, minutesBetween(s.start, s.end) - (Number(s.unpaidBreakMin) || 0));
+      const workedMin = Math.max(
+        0,
+        minutesBetween(s.start, s.end) - (Number(s.unpaidBreakMin) || 0)
+      );
       const hours = workedMin / 60;
       const pay = round2(hours * (s.rate || 0));
       return { ...s, hours: round2(hours), pay };
@@ -120,21 +172,31 @@ export default function App() {
       (acc, s) => {
         const k = s.job || "A";
         acc[k] = acc[k] || { hours: 0, pay: 0 };
-        acc[k].hours += s.hours; acc[k].pay += s.pay; return acc;
+        acc[k].hours += s.hours;
+        acc[k].pay += s.pay;
+        return acc;
       },
       { A: { hours: 0, pay: 0 }, B: { hours: 0, pay: 0 } }
     );
-    Object.keys(byJob).forEach((k) => { byJob[k].hours = round2(byJob[k].hours); byJob[k].pay = round2(byJob[k].pay); });
+    Object.keys(byJob).forEach((k) => {
+      byJob[k].hours = round2(byJob[k].hours);
+      byJob[k].pay = round2(byJob[k].pay);
+    });
     const totals = {
-      hours: round2(Object.values(byJob).reduce((t, v) => t + (v.hours || 0), 0)),
+      hours: round2(
+        Object.values(byJob).reduce((t, v) => t + (v.hours || 0), 0)
+      ),
       pay: round2(Object.values(byJob).reduce((t, v) => t + (v.pay || 0), 0)),
     };
     return { perShift, byJob, totals };
   }, [shifts]);
 
-  const handleImportReplace = (imported) => dispatch({ type: "replaceAllShifts", value: imported });
-  const handleImportAppend  = (imported) => dispatch({ type: "appendShifts", value: imported });
-  const handleReorder       = (fromIndex, toIndex) => dispatch({ type: "reorderShifts", fromIndex, toIndex });
+  const handleImportReplace = (imported) =>
+    dispatch({ type: "replaceAllShifts", value: imported });
+  const handleImportAppend = (imported) =>
+    dispatch({ type: "appendShifts", value: imported });
+  const handleReorder = (fromIndex, toIndex) =>
+    dispatch({ type: "reorderShifts", fromIndex, toIndex });
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 p-6">
@@ -196,7 +258,9 @@ export default function App() {
               currency={currency}
               jobs={jobs}
               onSetCurrency={(v) => dispatch({ type: "setCurrency", value: v })}
-              onSetJobRate={(job, value) => dispatch({ type: "setJobRate", job, value })}
+              onSetJobRate={(job, value) =>
+                dispatch({ type: "setJobRate", job, value })
+              }
             />
           </div>
           <div className="sm:col-span-2">
@@ -207,18 +271,45 @@ export default function App() {
         <section className="bg-white dark:bg-gray-900 rounded-2xl shadow p-4 space-y-3 border border-transparent dark:border-gray-800">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">{t("shifts")}</h2>
-            <button
-              className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
-              onClick={() => dispatch({ type: "addShift" })}
-            >
-              {t("add")}
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* 정렬 버튼 */}
+              <button
+                className="px-3 py-1.5 rounded-lg border bg-gray-100 text-gray-900 text-sm hover:bg-gray-200
+                   dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-700"
+                onClick={() => dispatch({ type: "sortByDateStart" })}
+                title={t("sortByDate")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path d="M5 3.5a.75.75 0 0 1 1.5 0v10.69l2.22-2.22a.75.75 0 0 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06L5 14.19V3.5Z" />
+                    <path d="M10.75 5.5a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Zm0 4a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Zm0 4a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Z" />
+                  </svg>
+                  {t("sortByDate")}
+                </span>
+              </button>
+
+              {/* + Add 버튼 */}
+              <button
+                className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
+                onClick={() => dispatch({ type: "addShift" })}
+              >
+                {t("add")}
+              </button>
+            </div>
           </div>
+
           <ShiftTable
             currency={currency}
             jobs={jobs}
             shifts={shifts}
-            onUpdate={(id, patch) => dispatch({ type: "updateShift", id, patch })}
+            onUpdate={(id, patch) =>
+              dispatch({ type: "updateShift", id, patch })
+            }
             onAdd={() => dispatch({ type: "addShift" })}
             onRemove={(id) => dispatch({ type: "removeShift", id })}
             onReorder={handleReorder}

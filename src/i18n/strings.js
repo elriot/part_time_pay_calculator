@@ -8,7 +8,7 @@ export const STRINGS = {
     autoSaveOn: "Auto-save: ON",
     settings: "Settings",
     currency: "Currency",
-    jobRate: "Job {{k}} wage",
+    jobRate: "Job {{k}} Wage",
     totals: "Totals",
     job: "Job {{k}}",
     overall: "Overall",
@@ -36,6 +36,7 @@ export const STRINGS = {
     // lang toggle
     langEnglish: "🇺🇸 English",
     langKorean: "🇰🇷 한국어",
+		sortByDate: "Auto-sort",
   },
   ko: {
     appSubtitle: "데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산",
@@ -74,5 +75,6 @@ export const STRINGS = {
     // lang toggle
     langEnglish: "🇺🇸 English",
     langKorean: "🇰🇷 한국어",
+		sortByDate: "자동정렬",
   },
 };

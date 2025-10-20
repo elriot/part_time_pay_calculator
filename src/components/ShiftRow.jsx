@@ -68,13 +68,30 @@ export default function ShiftRow({
         <input type="number" step="0.01" className={`${inputBase} w-28`} value={shift.rate}
                onChange={(e) => onChange({ rate: Number(e.target.value) || 0 })}/>
       </td>
-      <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{currency} {pay.toFixed(2)}</td>
+      <td className="py-1.5 pr-2 font-medium whitespace-nowrap">
+        {currency} {pay.toFixed(2)}
+      </td>
+
+      {/* Icon-only delete button */}
       <td className="py-1.5 pr-2 text-right">
         <button
-          className="px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
+          type="button"
           onClick={onRemove}
+          aria-label={t("delete")}
+          title={t("delete")}
+          className="inline-flex items-center justify-center rounded-md p-2
+                     text-red-600 hover:text-red-700
+                     bg-red-50 hover:bg-red-100
+                     dark:text-red-300 dark:hover:text-red-200
+                     dark:bg-red-900/20 dark:hover:bg-red-900/30
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400
+                     dark:focus:ring-offset-gray-900"
         >
-          {t("delete")}
+          {/* Heroicons mini trash (MIT) */}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+               fill="currentColor" className="w-4 h-4">
+            <path d="M6 8.5a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-1.5 0v-6A.75.75 0 0 1 6 8.5Zm4 .75a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 1.5 0v-6Zm2.75-.75a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-1.5 0v-6a.75.75 0 0 1 .75-.75ZM3.25 5.5A.75.75 0 0 1 4 4.75h3.19l.28-.56a1.5 1.5 0 0 1 1.34-.84h2.38c.58 0 1.11.33 1.36.84l.25.56H16a.75.75 0 0 1 0 1.5h-.75v8A2.75 2.75 0 0 1 12.5 17.5h-5A2.75 2.75 0 0 1 4.75 15V6.25H4a.75.75 0 0 1-.75-.75Zm2 1.5V15c0 .69.56 1.25 1.25 1.25h5c.69 0 1.25-.56 1.25-1.25V7H5.25Z"/>
+          </svg>
         </button>
       </td>
     </tr>
