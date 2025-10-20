@@ -9,7 +9,17 @@ const minutesBetween = (start, end) => {
 };
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export default function ShiftRow({ currency, jobs, shift, onChange, onRemove }) {
+export default function ShiftRow({
+  rowIndex,          // ← 추가: 0부터 시작, 화면에는 +1로 표시
+  currency,
+  jobs,
+  shift,
+  onChange,
+  onRemove,
+  rowDragProps,      // { draggable, onDragStart, onDragOver }
+  isDragging,
+  isOver,
+}) {
   const { hours, pay } = useMemo(() => {
     const worked = Math.max(
       0,
@@ -23,7 +33,21 @@ export default function ShiftRow({ currency, jobs, shift, onChange, onRemove }) 
     "border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100";
 
   return (
-    <tr className="border-t border-gray-200 dark:border-gray-800">
+    <tr
+      className={`border-t border-gray-200 dark:border-gray-800 ${
+        isDragging ? "opacity-50" : ""
+      } ${isOver ? "outline outline-2 outline-blue-400/50" : ""}`}
+      {...rowDragProps}
+    >
+      {/* 번호 컬럼 */}
+      <td className="py-1.5 pr-2 text-right tabular-nums w-10 text-gray-500 dark:text-gray-400">
+        {rowIndex + 1}
+      </td>
+      {/* 드래그 핸들 */}
+      <td className="py-1.5 pr-2 cursor-grab active:cursor-grabbing select-none text-gray-400 dark:text-gray-500">
+        ↕︎
+      </td>
+
       <td className="py-1.5 pr-2">
         <input
           type="date"

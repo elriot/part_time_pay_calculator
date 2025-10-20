@@ -75,7 +75,15 @@ function reducer(state, action) {
     case "appendShifts": {
       const next = Array.isArray(action.value) ? action.value : [];
       return { ...state, shifts: [...state.shifts, ...next] };
-    }			
+    }
+		case "reorderShifts": {
+      const { fromIndex, toIndex } = action;
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return state;
+      const next = [...state.shifts];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return { ...state, shifts: next };
+    }
     default:
       return state;
   }
@@ -137,6 +145,9 @@ export default function App() {
 	const handleImportAppend = (imported) => {
 		dispatch({ type: "appendShifts", value: imported });
 	};
+	const handleReorder = (fromIndex, toIndex) => {
+    dispatch({ type: "reorderShifts", fromIndex, toIndex });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 p-6">
@@ -200,6 +211,7 @@ export default function App() {
             onUpdate={(id, patch) => dispatch({ type: "updateShift", id, patch })}
             onAdd={() => dispatch({ type: "addShift" })}
             onRemove={(id) => dispatch({ type: "removeShift", id })}
+						onReorder={handleReorder}
           />
         </section>
       </div>
