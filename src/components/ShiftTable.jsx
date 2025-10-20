@@ -37,7 +37,7 @@ export default function ShiftTable({
             <th className="py-2 pr-2">{t("thJob")}</th>
             <th className="py-2 pr-2">{t("thStart")}</th>
             <th className="py-2 pr-2">{t("thEnd")}</th>
-            <th className="py-2 pr-2">{t("thBreak")}</th>
+            {/* <th className="py-2 pr-2">{t("thBreak")}</th> */}
             <th className="py-2 pr-2">{t("thScheduledHours")}</th>
             <th className="py-2 pr-2">{t("thPaidHours")}</th>
             {/* ⬇️ 시급 컬럼 제거 */}

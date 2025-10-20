@@ -47,13 +47,13 @@ const initialState = {
       id: "A",
       name: "Job A",
       rate: 20,
-      breakPolicy: { enabled: true, thresholdHours: 5, minBreakMin: 30 },
+      breakPolicy: { enabled: true, thresholdHours: 6, minBreakMin: 30 },
     },
     {
       id: "B",
       name: "Job B",
       rate: 25,
-      breakPolicy: { enabled: true, thresholdHours: 5, minBreakMin: 30 },
+      breakPolicy: { enabled: true, thresholdHours: 6, minBreakMin: 30 },
     },
   ],
   shifts: [],
@@ -74,7 +74,7 @@ function reviveState(raw) {
           rate: Number(j.rate) || 0,
           breakPolicy: {
             enabled: !!(j.breakPolicy?.enabled ?? true),
-            thresholdHours: Number(j.breakPolicy?.thresholdHours ?? 5) || 0,
+            thresholdHours: Number(j.breakPolicy?.thresholdHours ?? 6) || 0,
             minBreakMin: Number(j.breakPolicy?.minBreakMin ?? 30) || 0,
           },
         }))

@@ -68,9 +68,9 @@ export default function ShiftRow({
       <td className="py-1.5 pr-2">
         <input type="time" className={inputBase} value={shift.end} onChange={(e) => onChange({ end: e.target.value })} />
       </td>
-      <td className="py-1.5 pr-2">
+      {/* <td className="py-1.5 pr-2">
         <input type="number" min={0} step={1} className={`${inputBase} w-24`} value={shift.unpaidBreakMin} onChange={(e) => onChange({ unpaidBreakMin: Number(e.target.value) || 0 })} />
-      </td>
+      </td> */}
 
       <td className="py-1.5 pr-2 whitespace-nowrap">{scheduledHours.toFixed(2)}</td>
       <td className="py-1.5 pr-2 whitespace-nowrap">{paidHours.toFixed(2)}</td>
