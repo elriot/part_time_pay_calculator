@@ -430,7 +430,7 @@ export default function App() {
             </div>
 
             {/* 기존 CsvControls 그대로 */}
-            <CsvControls
+            {/* <CsvControls
               shifts={shifts}
               onImportReplace={(imported) =>
                 dispatch({ type: "replaceAllShifts", value: imported })
@@ -438,7 +438,7 @@ export default function App() {
               onImportAppend={(imported) =>
                 dispatch({ type: "appendShifts", value: imported })
               }
-            />
+            /> */}
           </div>
         </header>
 
@@ -465,39 +465,6 @@ export default function App() {
             byJob={byJob}
             totals={totals}
           />
-
-          <section className="bg-white dark:bg-gray-900 rounded-2xl shadow p-4 space-y-3 border border-transparent dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">{t("shifts")}</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  className="px-3 py-1.5 rounded-lg border bg-gray-100 text-gray-900 text-sm hover:bg-gray-200
-                     dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-700"
-                  onClick={() => dispatch({ type: "sortByDateStart" })}
-                  title={t("sortByDate")}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <svg
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="w-4 h-4"
-                    >
-                      <path d="M5 3.5a.75.75 0 0 1 1.5 0v10.69l2.22-2.22a.75.75 0 0 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06L5 14.19V3.5Z" />
-                      <path d="M10.75 5.5a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Zm0 4a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Zm0 4a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75Z" />
-                    </svg>
-                    {t("sortByDate")}
-                  </span>
-                </button>
-                <button
-                  className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
-                  onClick={() => dispatch({ type: "addShift" })}
-                >
-                  {t("add")}
-                </button>
-              </div>
-            </div>
-
-          </section>
         </div>
 
         {/* Shifts 섹션 — 기존과 동일 */}
