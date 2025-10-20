@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
+import { useI18n } from "../hooks/useI18n";
 
-// CSV utility: RFC4180-safe handling for commas, quotes, and line breaks
+// (유틸 동일, 주석 영문 가능)
 function toCSVRow(arr) {
   return arr
     .map((v) => {
@@ -11,7 +12,6 @@ function toCSVRow(arr) {
     })
     .join(",");
 }
-
 function parseCSV(text) {
   const rows = [];
   let i = 0, cur = "", inQuotes = false, row = [];
@@ -27,50 +27,33 @@ function parseCSV(text) {
       if (c === '"') { inQuotes = true; i++; continue; }
       if (c === ',') { row.push(cur); cur = ""; i++; continue; }
       if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
-      if (c === '\r') { // support CRLF
-        if (text[i + 1] === '\n') { i++; }
-        row.push(cur); rows.push(row); row = []; cur = ""; i++; continue;
-      }
+      if (c === '\r') { if (text[i + 1] === '\n') { i++; } row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
       cur += c; i++; continue;
     }
   }
-  // last cell
   row.push(cur); rows.push(row);
-  // remove trailing empty rows
   while (rows.length && rows[rows.length - 1].every((x) => x === "")) rows.pop();
   return rows;
 }
-
-const HEADERS = ["id", "date", "job", "start", "end", "unpaidBreakMin", "rate", "note"];
+const HEADERS = ["id","date","job","start","end","unpaidBreakMin","rate","note"];
 
 export default function CsvControls({ shifts, onImportReplace, onImportAppend }) {
+  const { t } = useI18n();
   const fileRef = useRef(null);
   const fileRefAppend = useRef(null);
 
   const handleExport = () => {
     const lines = [HEADERS];
     for (const s of shifts) {
-      lines.push([
-        s.id,
-        s.date,
-        s.job,
-        s.start,
-        s.end,
-        s.unpaidBreakMin ?? 0,
-        s.rate ?? 0,
-        s.note ?? "",
-      ]);
+      lines.push([ s.id, s.date, s.job, s.start, s.end, s.unpaidBreakMin ?? 0, s.rate ?? 0, s.note ?? "" ]);
     }
     const csv = lines.map(toCSVRow).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const today = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `shifts_${today}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const today = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `shifts_${today}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   };
 
@@ -79,33 +62,27 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
     const rows = parseCSV(text);
     if (!rows.length) return;
 
-    // detect header row
     const header = rows[0].map((h) => h.trim());
-    const isHeader =
-      header.length >= HEADERS.length &&
+    const isHeader = header.length >= HEADERS.length &&
       HEADERS.every((h, idx) => header[idx] && header[idx].toLowerCase() === h.toLowerCase());
 
     const dataRows = isHeader ? rows.slice(1) : rows;
 
-    // CSV → shift object mapping (+ type conversion)
     const toShift = (cells) => {
       const get = (idx) => (cells[idx] ?? "").trim();
       return {
         id: get(0) || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
-        date: get(1) || new Date().toISOString().slice(0, 10),
+        date: get(1) || new Date().toISOString().slice(0,10),
         job: (get(2) || "A").toUpperCase(),
         start: get(3) || "09:00",
         end: get(4) || "17:00",
         unpaidBreakMin: Number(get(5)) || 0,
         rate: Number(get(6)) || 0,
-        note: get(7) || "",
+        note: get(7) || ""
       };
     };
 
-    const imported = dataRows
-      .filter((r) => r && r.length)
-      .map(toShift);
-
+    const imported = dataRows.filter(Boolean).map(toShift);
     if (!imported.length) return;
 
     if (mode === "replace") onImportReplace(imported);
@@ -114,20 +91,12 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
 
   return (
     <div className="flex flex-wrap gap-2">
-      {/* Export */}
-      <button
-        className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm"
-        onClick={handleExport}
-      >
-        Export CSV
+      <button className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm" onClick={handleExport}>
+        {t("exportCsv")}
       </button>
 
-      {/* Replace Import */}
       <input
-        ref={fileRef}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
+        ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) parseAndMap(f, "replace").finally(() => (fileRef.current.value = ""));
@@ -137,15 +106,11 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
         className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-900 text-sm border"
         onClick={() => fileRef.current?.click()}
       >
-        Import CSV (Replace)
+        {t("importCsvReplace")}
       </button>
 
-      {/* Append Import */}
       <input
-        ref={fileRefAppend}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
+        ref={fileRefAppend} type="file" accept=".csv,text/csv" className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) parseAndMap(f, "append").finally(() => (fileRefAppend.current.value = ""));
@@ -155,7 +120,7 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
         className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-900 text-sm border"
         onClick={() => fileRefAppend.current?.click()}
       >
-        Import CSV (Append)
+        {t("importCsvAppend")}
       </button>
     </div>
   );

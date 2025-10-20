@@ -3,6 +3,7 @@ import Settings from "./components/Settings";
 import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
 import CsvControls from "./components/CsvControls";
+import { useI18n } from "./hooks/useI18n";
 import "./App.css";
 
 /* Theme hook 동일 */
@@ -95,6 +96,8 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState, init);
   const { currency, jobs, shifts } = state;
   const { theme, setTheme } = useTheme();
+  const { t, lang, setLang } = useI18n();
+	
 
   // Auto-save
   const saveTimer = useRef(null);
@@ -140,12 +143,14 @@ export default function App() {
           <div>
             <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Desktop-first · Calculate paid hours & wages across multiple jobs
+              {t("appSubtitle")}
             </p>
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <div className="text-xs text-gray-600 dark:text-gray-300">project: part_time_pay_calculator</div>
+            <div className="text-xs text-gray-600 dark:text-gray-300">
+              {t("projectLabel")}
+            </div>
             <div className="flex gap-2 items-center">
               <button
                 className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
@@ -153,19 +158,30 @@ export default function App() {
                 title="Toggle dark mode"
                 aria-pressed={theme === "dark"}
               >
-                {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+                {theme === "dark" ? t("themeLight") : t("themeDark")}
               </button>
+
+              {/* 언어 토글 */}
+              <button
+                className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
+                onClick={() => setLang(lang === "en" ? "ko" : "en")}
+                title="Switch language"
+              >
+                {lang === "en" ? t("langKorean") : t("langEnglish")}
+              </button>
+
               <button
                 className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
                 onClick={() => dispatch({ type: "resetAll" })}
-                title="Clear all local data"
+                title={t("clearLocalData")}
               >
-                Clear local data
+                {t("clearLocalData")}
               </button>
               <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
-                Auto-save: ON
+                {t("autoSaveOn")}
               </span>
             </div>
+
             <CsvControls
               shifts={shifts}
               onImportReplace={handleImportReplace}
@@ -190,12 +206,12 @@ export default function App() {
 
         <section className="bg-white dark:bg-gray-900 rounded-2xl shadow p-4 space-y-3 border border-transparent dark:border-gray-800">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Shifts</h2>
+            <h2 className="font-semibold">{t("shifts")}</h2>
             <button
               className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
               onClick={() => dispatch({ type: "addShift" })}
             >
-              + Add
+              {t("add")}
             </button>
           </div>
           <ShiftTable
@@ -210,7 +226,7 @@ export default function App() {
         </section>
 
         <footer className="text-xs text-gray-500 pt-2">
-          ※ Supports overnight shifts (crossing midnight). Amounts rounded to 2 decimals.
+          {t("footerNote")}
         </footer>
       </div>
     </div>

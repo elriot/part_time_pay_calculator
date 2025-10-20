@@ -1,15 +1,11 @@
 import React, { useState, useMemo } from "react";
 import ShiftRow from "./ShiftRow";
+import { useI18n } from "../hooks/useI18n";
 
 export default function ShiftTable({
-  currency,
-  jobs,
-  shifts,
-  onUpdate,
-  onAdd,
-  onRemove,
-  onReorder,
+  currency, jobs, shifts, onUpdate, onAdd, onRemove, onReorder,
 }) {
+  const { t } = useI18n();
   const [draggingId, setDraggingId] = useState(null);
   const [overId, setOverId] = useState(null);
 
@@ -35,16 +31,16 @@ export default function ShiftTable({
       <table className="w-full text-sm">
         <thead className="text-left text-gray-600 dark:text-gray-300">
           <tr>
-            <th className="py-2 pr-2 w-10">#</th>
-            <th className="py-2 pr-2 w-8">↕︎</th>
-            <th className="py-2 pr-2">Date</th>
-            <th className="py-2 pr-2">Job</th>
-            <th className="py-2 pr-2">Start</th>
-            <th className="py-2 pr-2">End</th>
-            <th className="py-2 pr-2">Break (min)</th>
-            <th className="py-2 pr-2">Paid hours</th>
-            <th className="py-2 pr-2">Hourly rate</th>
-            <th className="py-2 pr-2">Daily total</th>
+            <th className="py-2 pr-2 w-10">{t("thNo")}</th>
+            <th className="py-2 pr-2 w-8">{t("thHandle")}</th>
+            <th className="py-2 pr-2">{t("thDate")}</th>
+            <th className="py-2 pr-2">{t("thJob")}</th>
+            <th className="py-2 pr-2">{t("thStart")}</th>
+            <th className="py-2 pr-2">{t("thEnd")}</th>
+            <th className="py-2 pr-2">{t("thBreak")}</th>
+            <th className="py-2 pr-2">{t("thPaidHours")}</th>
+            <th className="py-2 pr-2">{t("thRate")}</th>
+            <th className="py-2 pr-2">{t("thDailyTotal")}</th>
             <th className="py-2 pr-2"> </th>
           </tr>
         </thead>
@@ -79,11 +75,9 @@ export default function ShiftTable({
           className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
           onClick={onAdd}
         >
-          + Add
+          {t("add")}
         </button>
-        <span className="text-xs text-gray-500">
-          Tip: Drag the ↕︎ handle to reorder rows.
-        </span>
+        <span className="text-xs text-gray-500">{t("tipReorder")}</span>
       </div>
     </div>
   );

@@ -1,25 +1,19 @@
 import React, { useMemo } from "react";
+import { useI18n } from "../hooks/useI18n";
 
 const minutesBetween = (start, end) => {
   const [sh, sm] = String(start).split(":").map(Number);
   const [eh, em] = String(end).split(":").map(Number);
   let s = sh * 60 + sm, e = eh * 60 + em;
-  if (e < s) e += 24 * 60;
-  return e - s;
+  if (e < s) e += 24 * 60; return e - s;
 };
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export default function ShiftRow({
-  rowIndex,
-  currency,
-  jobs,
-  shift,
-  onChange,
-  onRemove,
-  rowDragProps,
-  isDragging,
-  isOver,
+  rowIndex, currency, jobs, shift, onChange, onRemove,
+  rowDragProps, isDragging, isOver,
 }) {
+  const { t } = useI18n();
   const { hours, pay } = useMemo(() => {
     const worked = Math.max(0, minutesBetween(shift.start, shift.end) - (Number(shift.unpaidBreakMin) || 0));
     const h = worked / 60;
@@ -54,9 +48,7 @@ export default function ShiftRow({
                   const defaultRate = jobs[job] ?? shift.rate;
                   onChange({ job, rate: defaultRate });
                 }}>
-          {Object.keys(jobs).map((k) => (
-            <option key={k} value={k}>{k}</option>
-          ))}
+          {Object.keys(jobs).map((k) => (<option key={k} value={k}>{k}</option>))}
         </select>
       </td>
       <td className="py-1.5 pr-2">
@@ -76,15 +68,13 @@ export default function ShiftRow({
         <input type="number" step="0.01" className={`${inputBase} w-28`} value={shift.rate}
                onChange={(e) => onChange({ rate: Number(e.target.value) || 0 })}/>
       </td>
-      <td className="py-1.5 pr-2 font-medium whitespace-nowrap">
-        {currency} {pay.toFixed(2)}
-      </td>
+      <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{currency} {pay.toFixed(2)}</td>
       <td className="py-1.5 pr-2 text-right">
         <button
           className="px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
           onClick={onRemove}
         >
-          Delete
+          {t("delete")}
         </button>
       </td>
     </tr>
