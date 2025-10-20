@@ -38,6 +38,9 @@ export const STRINGS = {
     langKorean: "🇰🇷 한국어",
 		sortByDate: "Auto-sort",
 		thScheduledHours: "Scheduled hours",
+		minBreakMinutes: "break",
+		thresholdHold: "thresholdHold",
+		enabled: "Enabled",
   },
   ko: {
     appSubtitle: "데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산",
@@ -77,6 +80,9 @@ export const STRINGS = {
     langEnglish: "🇺🇸 English",
     langKorean: "🇰🇷 한국어",
 		sortByDate: "자동정렬",
-		thScheduledHours: "스케줄시간(h)",
+		thScheduledHours: "스케줄시간",
+		minBreakMinutes: "휴게시간",
+		thresholdHold: "임계값",
+		enabled: "사용",
   },
 };
