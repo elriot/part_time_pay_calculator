@@ -41,6 +41,8 @@ export const STRINGS = {
 		minBreakMinutes: "Break Time",
 		thresholdHold: "Break Required",
 		enabled: "Enabled",
+		autoBreakTitle:"Apply Break Time",
+		thresholdHours:"Required Work Time"
   },
   ko: {
     appSubtitle: "데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산",
@@ -82,7 +84,9 @@ export const STRINGS = {
 		sortByDate: "자동정렬",
 		thScheduledHours: "스케줄시간",
 		minBreakMinutes: "휴게시간",
-		thresholdHold: "휴게시간 적용 여부",
+		thresholdHold: "근무요구시간",
 		enabled: "사용",
+		autoBreakTitle:"휴게시간 적용",
+		thresholdHours:"휴게 적용 근무 시간"
   },
 };
