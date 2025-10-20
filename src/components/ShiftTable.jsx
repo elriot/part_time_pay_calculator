@@ -8,7 +8,7 @@ export default function ShiftTable({
   onUpdate,
   onAdd,
   onRemove,
-  onReorder, // (fromIndex, toIndex)
+  onReorder,
 }) {
   const [draggingId, setDraggingId] = useState(null);
   const [overId, setOverId] = useState(null);
@@ -20,20 +20,14 @@ export default function ShiftTable({
   }, [shifts]);
 
   const handleDragStart = (id) => setDraggingId(id);
-  const handleDragOver = (e, id) => {
-    e.preventDefault(); // drop 허용
-    setOverId(id);
-  };
+  const handleDragOver = (e, id) => { e.preventDefault(); setOverId(id); };
   const finishDrag = () => {
     if (draggingId && overId && draggingId !== overId) {
       const fromIndex = idToIndex.get(draggingId);
       const toIndex = idToIndex.get(overId);
-      if (typeof fromIndex === "number" && typeof toIndex === "number") {
-        onReorder?.(fromIndex, toIndex);
-      }
+      if (typeof fromIndex === "number" && typeof toIndex === "number") onReorder?.(fromIndex, toIndex);
     }
-    setDraggingId(null);
-    setOverId(null);
+    setDraggingId(null); setOverId(null);
   };
 
   return (
@@ -43,14 +37,14 @@ export default function ShiftTable({
           <tr>
             <th className="py-2 pr-2 w-10">#</th>
             <th className="py-2 pr-2 w-8">↕︎</th>
-            <th className="py-2 pr-2">날짜</th>
-            <th className="py-2 pr-2">근무처</th>
-            <th className="py-2 pr-2">시작</th>
-            <th className="py-2 pr-2">끝</th>
-            <th className="py-2 pr-2">휴게(분)</th>
-            <th className="py-2 pr-2">유급시간(h)</th>
-            <th className="py-2 pr-2">시급</th>
-            <th className="py-2 pr-2">일급</th>
+            <th className="py-2 pr-2">Date</th>
+            <th className="py-2 pr-2">Job</th>
+            <th className="py-2 pr-2">Start</th>
+            <th className="py-2 pr-2">End</th>
+            <th className="py-2 pr-2">Break (min)</th>
+            <th className="py-2 pr-2">Paid hours</th>
+            <th className="py-2 pr-2">Hourly rate</th>
+            <th className="py-2 pr-2">Daily total</th>
             <th className="py-2 pr-2"> </th>
           </tr>
         </thead>
@@ -58,17 +52,15 @@ export default function ShiftTable({
           {shifts.map((shift, idx) => {
             const isDragging = draggingId === shift.id;
             const isOver = overId === shift.id && draggingId !== overId;
-
             return (
               <ShiftRow
                 key={shift.id}
-                rowIndex={idx}                // ← 번호 표시용
+                rowIndex={idx}
                 currency={currency}
                 jobs={jobs}
                 shift={shift}
                 onChange={(patch) => onUpdate(shift.id, patch)}
                 onRemove={() => onRemove(shift.id)}
-                // 드래그 관련
                 rowDragProps={{
                   draggable: true,
                   onDragStart: () => handleDragStart(shift.id),
@@ -87,10 +79,10 @@ export default function ShiftTable({
           className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
           onClick={onAdd}
         >
-          + 추가
+          + Add
         </button>
         <span className="text-xs text-gray-500">
-          팁: ↕︎ 핸들을 드래그해서 순서를 바꿀 수 있어요.
+          Tip: Drag the ↕︎ handle to reorder rows.
         </span>
       </div>
     </div>

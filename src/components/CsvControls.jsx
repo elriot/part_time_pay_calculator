@@ -1,7 +1,6 @@
-
 import React, { useRef } from "react";
 
-// CSV 유틸: RFC4180 스타일로 "필드 내 ,/줄바꿈/따옴표" 안전 처리
+// CSV utility: RFC4180-safe handling for commas, quotes, and line breaks
 function toCSVRow(arr) {
   return arr
     .map((v) => {
@@ -28,21 +27,21 @@ function parseCSV(text) {
       if (c === '"') { inQuotes = true; i++; continue; }
       if (c === ',') { row.push(cur); cur = ""; i++; continue; }
       if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
-      if (c === '\r') { // CRLF 지원
+      if (c === '\r') { // support CRLF
         if (text[i + 1] === '\n') { i++; }
         row.push(cur); rows.push(row); row = []; cur = ""; i++; continue;
       }
       cur += c; i++; continue;
     }
   }
-  // 마지막 셀
+  // last cell
   row.push(cur); rows.push(row);
-  // 마지막이 빈 줄일 때 제거
+  // remove trailing empty rows
   while (rows.length && rows[rows.length - 1].every((x) => x === "")) rows.pop();
   return rows;
 }
 
-const HEADERS = ["id","date","job","start","end","unpaidBreakMin","rate","note"];
+const HEADERS = ["id", "date", "job", "start", "end", "unpaidBreakMin", "rate", "note"];
 
 export default function CsvControls({ shifts, onImportReplace, onImportAppend }) {
   const fileRef = useRef(null);
@@ -59,14 +58,14 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
         s.end,
         s.unpaidBreakMin ?? 0,
         s.rate ?? 0,
-        s.note ?? ""
+        s.note ?? "",
       ]);
     }
     const csv = lines.map(toCSVRow).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const today = new Date().toISOString().slice(0,10);
+    const today = new Date().toISOString().slice(0, 10);
     a.href = url;
     a.download = `shifts_${today}.csv`;
     document.body.appendChild(a);
@@ -80,7 +79,7 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
     const rows = parseCSV(text);
     if (!rows.length) return;
 
-    // 헤더 확인
+    // detect header row
     const header = rows[0].map((h) => h.trim());
     const isHeader =
       header.length >= HEADERS.length &&
@@ -88,23 +87,23 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
 
     const dataRows = isHeader ? rows.slice(1) : rows;
 
-    // CSV → shift 객체 매핑(+타입 변환)
+    // CSV → shift object mapping (+ type conversion)
     const toShift = (cells) => {
       const get = (idx) => (cells[idx] ?? "").trim();
       return {
         id: get(0) || crypto.randomUUID?.() || Math.random().toString(36).slice(2),
-        date: get(1) || new Date().toISOString().slice(0,10),
+        date: get(1) || new Date().toISOString().slice(0, 10),
         job: (get(2) || "A").toUpperCase(),
         start: get(3) || "09:00",
         end: get(4) || "17:00",
         unpaidBreakMin: Number(get(5)) || 0,
         rate: Number(get(6)) || 0,
-        note: get(7) || ""
+        note: get(7) || "",
       };
     };
 
     const imported = dataRows
-      .filter((r) => r && r.length) // 빈 줄 제거
+      .filter((r) => r && r.length)
       .map(toShift);
 
     if (!imported.length) return;
@@ -115,14 +114,15 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
 
   return (
     <div className="flex flex-wrap gap-2">
+      {/* Export */}
       <button
         className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm"
         onClick={handleExport}
       >
-        CSV 내보내기
+        Export CSV
       </button>
 
-      {/* 교체 Import */}
+      {/* Replace Import */}
       <input
         ref={fileRef}
         type="file"
@@ -137,10 +137,10 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
         className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-900 text-sm border"
         onClick={() => fileRef.current?.click()}
       >
-        CSV 불러오기(교체)
+        Import CSV (Replace)
       </button>
 
-      {/* 추가 Import */}
+      {/* Append Import */}
       <input
         ref={fileRefAppend}
         type="file"
@@ -155,7 +155,7 @@ export default function CsvControls({ shifts, onImportReplace, onImportAppend })
         className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-900 text-sm border"
         onClick={() => fileRefAppend.current?.click()}
       >
-        CSV 불러오기(추가)
+        Import CSV (Append)
       </button>
     </div>
   );

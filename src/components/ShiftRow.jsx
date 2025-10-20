@@ -4,27 +4,24 @@ const minutesBetween = (start, end) => {
   const [sh, sm] = String(start).split(":").map(Number);
   const [eh, em] = String(end).split(":").map(Number);
   let s = sh * 60 + sm, e = eh * 60 + em;
-  if (e < s) e += 24 * 60; // 자정 넘김
+  if (e < s) e += 24 * 60;
   return e - s;
 };
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export default function ShiftRow({
-  rowIndex,          // ← 추가: 0부터 시작, 화면에는 +1로 표시
+  rowIndex,
   currency,
   jobs,
   shift,
   onChange,
   onRemove,
-  rowDragProps,      // { draggable, onDragStart, onDragOver }
+  rowDragProps,
   isDragging,
   isOver,
 }) {
   const { hours, pay } = useMemo(() => {
-    const worked = Math.max(
-      0,
-      minutesBetween(shift.start, shift.end) - (Number(shift.unpaidBreakMin) || 0)
-    );
+    const worked = Math.max(0, minutesBetween(shift.start, shift.end) - (Number(shift.unpaidBreakMin) || 0));
     const h = worked / 60;
     return { hours: round2(h), pay: round2(h * (Number(shift.rate) || 0)) };
   }, [shift.start, shift.end, shift.unpaidBreakMin, shift.rate]);
@@ -34,80 +31,50 @@ export default function ShiftRow({
 
   return (
     <tr
-      className={`border-t border-gray-200 dark:border-gray-800 ${
-        isDragging ? "opacity-50" : ""
-      } ${isOver ? "outline outline-2 outline-blue-400/50" : ""}`}
+      className={`border-t border-gray-200 dark:border-gray-800 ${isDragging ? "opacity-50" : ""} ${
+        isOver ? "outline outline-2 outline-blue-400/50" : ""
+      }`}
       {...rowDragProps}
     >
-      {/* 번호 컬럼 */}
       <td className="py-1.5 pr-2 text-right tabular-nums w-10 text-gray-500 dark:text-gray-400">
         {rowIndex + 1}
       </td>
-      {/* 드래그 핸들 */}
       <td className="py-1.5 pr-2 cursor-grab active:cursor-grabbing select-none text-gray-400 dark:text-gray-500">
         ↕︎
       </td>
 
       <td className="py-1.5 pr-2">
-        <input
-          type="date"
-          className={inputBase}
-          value={shift.date}
-          onChange={(e) => onChange({ date: e.target.value })}
-        />
+        <input type="date" className={inputBase} value={shift.date}
+               onChange={(e) => onChange({ date: e.target.value })}/>
       </td>
       <td className="py-1.5 pr-2">
-        <select
-          className={inputBase}
-          value={shift.job}
-          onChange={(e) => {
-            const job = e.target.value;
-            const defaultRate = jobs[job] ?? shift.rate;
-            onChange({ job, rate: defaultRate });
-          }}
-        >
+        <select className={inputBase} value={shift.job}
+                onChange={(e) => {
+                  const job = e.target.value;
+                  const defaultRate = jobs[job] ?? shift.rate;
+                  onChange({ job, rate: defaultRate });
+                }}>
           {Object.keys(jobs).map((k) => (
-            <option key={k} value={k}>
-              {k}
-            </option>
+            <option key={k} value={k}>{k}</option>
           ))}
         </select>
       </td>
       <td className="py-1.5 pr-2">
-        <input
-          type="time"
-          className={inputBase}
-          value={shift.start}
-          onChange={(e) => onChange({ start: e.target.value })}
-        />
+        <input type="time" className={inputBase} value={shift.start}
+               onChange={(e) => onChange({ start: e.target.value })}/>
       </td>
       <td className="py-1.5 pr-2">
-        <input
-          type="time"
-          className={inputBase}
-          value={shift.end}
-          onChange={(e) => onChange({ end: e.target.value })}
-        />
+        <input type="time" className={inputBase} value={shift.end}
+               onChange={(e) => onChange({ end: e.target.value })}/>
       </td>
       <td className="py-1.5 pr-2">
-        <input
-          type="number"
-          min={0}
-          step={1}
-          className={`${inputBase} w-24`}
-          value={shift.unpaidBreakMin}
-          onChange={(e) => onChange({ unpaidBreakMin: Number(e.target.value) || 0 })}
-        />
+        <input type="number" min={0} step={1} className={`${inputBase} w-24`} value={shift.unpaidBreakMin}
+               onChange={(e) => onChange({ unpaidBreakMin: Number(e.target.value) || 0 })}/>
       </td>
       <td className="py-1.5 pr-2 whitespace-nowrap">{hours.toFixed(2)}</td>
       <td className="py-1.5 pr-2 whitespace-nowrap">
-        <input
-          type="number"
-          step="0.01"
-          className={`${inputBase} w-28`}
-          value={shift.rate}
-          onChange={(e) => onChange({ rate: Number(e.target.value) || 0 })}
-        />
+        <input type="number" step="0.01" className={`${inputBase} w-28`} value={shift.rate}
+               onChange={(e) => onChange({ rate: Number(e.target.value) || 0 })}/>
       </td>
       <td className="py-1.5 pr-2 font-medium whitespace-nowrap">
         {currency} {pay.toFixed(2)}
@@ -117,7 +84,7 @@ export default function ShiftRow({
           className="px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
           onClick={onRemove}
         >
-          삭제
+          Delete
         </button>
       </td>
     </tr>

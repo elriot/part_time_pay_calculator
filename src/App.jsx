@@ -1,34 +1,38 @@
-import { useMemo, useReducer, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import Settings from "./components/Settings";
 import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
-import CsvControls from "./components/CsvControls"
-import "./App.css"
+import CsvControls from "./components/CsvControls";
+import "./App.css";
 
-const THEME_KEY = "ptpc_theme"; // 'light' | 'dark'
+/* Theme hook 동일 */
+const THEME_KEY = "ptpc_theme";
 function useTheme() {
   const getInitial = () => {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
-    // 시스템 선호 따라가기 (처음 한 번)
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+      ? "dark" : "light";
   };
   const [theme, setTheme] = useState(getInitial);
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme);
-    const root = document.documentElement; // <html>
-    root.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
   return { theme, setTheme };
 }
 
-const uid = () =>
-  (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+/* Utilities 동일 */
+const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
-
+const minutesBetween = (start, end) => {
+  const [sh, sm] = String(start).split(":").map(Number);
+  const [eh, em] = String(end).split(":").map(Number);
+  let s = sh * 60 + sm, e = eh * 60 + em;
+  if (e < s) e += 24 * 60;
+  return e - s;
+};
 const emptyShift = (jobs) => ({
   id: uid(),
   date: todayIso(),
@@ -36,47 +40,46 @@ const emptyShift = (jobs) => ({
   start: "09:00",
   end: "17:00",
   unpaidBreakMin: 30,
-  rate: jobs?.A ?? 20,  // 근무처 기본 시급 자동 세팅
+  rate: jobs?.A ?? 20,
 });
 
-const initialState = {
-  currency: "CAD",
-  jobs: { A: 20, B: 25 }, // 근무처별 기본 시급
-  shifts: [],             // 시작은 비워두고, 첫 행은 버튼으로 추가
-};
-
+/* State / Reducer 동일 (문구 없음) */
+const initialState = { currency: "CAD", jobs: { A: 20, B: 25 }, shifts: [] };
+const LS_KEY = "ptpc_v1";
+function reviveState(raw) {
+  try {
+    const p = JSON.parse(raw);
+    if (!p || typeof p !== "object") return null;
+    return {
+      currency: typeof p.currency === "string" ? p.currency : "CAD",
+      jobs: p.jobs && typeof p.jobs === "object" ? { A: 20, B: 25, ...p.jobs } : { A: 20, B: 25 },
+      shifts: Array.isArray(p.shifts) ? p.shifts : [],
+    };
+  } catch { return null; }
+}
+function init(initial) {
+  const raw = localStorage.getItem(LS_KEY);
+  const revived = raw ? reviveState(raw) : null;
+  return revived ? { ...initial, ...revived } : initial;
+}
 function reducer(state, action) {
   switch (action.type) {
-    case "setCurrency":
-      return { ...state, currency: action.value };
+    case "resetAll": { localStorage.removeItem(LS_KEY); return { ...initialState }; }
+    case "setCurrency": return { ...state, currency: action.value };
     case "setJobRate": {
       const jobs = { ...state.jobs, [action.job]: Number(action.value) || 0 };
-      // 이미 입력된 shift 중 해당 job의 rate가 "기본값과 동일"했다면 같이 갱신
       const shifts = state.shifts.map((s) =>
-        s.job === action.job && s.rate === state.jobs[action.job]
-          ? { ...s, rate: jobs[action.job] }
-          : s
+        s.job === action.job && s.rate === state.jobs[action.job] ? { ...s, rate: jobs[action.job] } : s
       );
       return { ...state, jobs, shifts };
     }
-    case "addShift":
-      return { ...state, shifts: [...state.shifts, emptyShift(state.jobs)] };
-    case "removeShift":
-      return { ...state, shifts: state.shifts.filter((s) => s.id !== action.id) };
+    case "addShift": return { ...state, shifts: [...state.shifts, emptyShift(state.jobs)] };
+    case "removeShift": return { ...state, shifts: state.shifts.filter((s) => s.id !== action.id) };
     case "updateShift":
-      return {
-        ...state,
-        shifts: state.shifts.map((s) => (s.id === action.id ? { ...s, ...action.patch } : s)),
-      };
-    case "replaceAllShifts": {
-      const next = Array.isArray(action.value) ? action.value : [];
-      return { ...state, shifts: next };
-    }
-    case "appendShifts": {
-      const next = Array.isArray(action.value) ? action.value : [];
-      return { ...state, shifts: [...state.shifts, ...next] };
-    }
-		case "reorderShifts": {
+      return { ...state, shifts: state.shifts.map((s) => (s.id === action.id ? { ...s, ...action.patch } : s)) };
+    case "replaceAllShifts": return { ...state, shifts: Array.isArray(action.value) ? action.value : [] };
+    case "appendShifts": return { ...state, shifts: [...state.shifts, ...(Array.isArray(action.value) ? action.value : [])] };
+    case "reorderShifts": {
       const { fromIndex, toIndex } = action;
       if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return state;
       const next = [...state.shifts];
@@ -84,29 +87,25 @@ function reducer(state, action) {
       next.splice(toIndex, 0, moved);
       return { ...state, shifts: next };
     }
-    default:
-      return state;
+    default: return state;
   }
 }
 
-// 유틸: 분 계산 (자정 넘김 지원)
-const minutesBetween = (start, end) => {
-  const [sh, sm] = String(start).split(":").map(Number);
-  const [eh, em] = String(end).split(":").map(Number);
-  let s = sh * 60 + sm,
-    e = eh * 60 + em;
-  if (e < s) e += 24 * 60;
-  return e - s;
-};
-
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState, init);
   const { currency, jobs, shifts } = state;
   const { theme, setTheme } = useTheme();
 
-   // ... 기존 useMemo, handlers 동일
+  // Auto-save
+  const saveTimer = useRef(null);
+  useEffect(() => {
+    const payload = JSON.stringify({ currency, jobs, shifts });
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => localStorage.setItem(LS_KEY, payload), 300);
+    return () => saveTimer.current && clearTimeout(saveTimer.current);
+  }, [currency, jobs, shifts]);
 
-  // 합계 계산
+  // Calculations
   const { perShift, byJob, totals } = useMemo(() => {
     const perShift = shifts.map((s) => {
       const workedMin = Math.max(0, minutesBetween(s.start, s.end) - (Number(s.unpaidBreakMin) || 0));
@@ -114,52 +113,39 @@ export default function App() {
       const pay = round2(hours * (s.rate || 0));
       return { ...s, hours: round2(hours), pay };
     });
-
     const byJob = perShift.reduce(
       (acc, s) => {
         const k = s.job || "A";
         acc[k] = acc[k] || { hours: 0, pay: 0 };
-        acc[k].hours += s.hours;
-        acc[k].pay += s.pay;
-        return acc;
+        acc[k].hours += s.hours; acc[k].pay += s.pay; return acc;
       },
       { A: { hours: 0, pay: 0 }, B: { hours: 0, pay: 0 } }
     );
-    Object.keys(byJob).forEach((k) => {
-      byJob[k].hours = round2(byJob[k].hours);
-      byJob[k].pay = round2(byJob[k].pay);
-    });
-
+    Object.keys(byJob).forEach((k) => { byJob[k].hours = round2(byJob[k].hours); byJob[k].pay = round2(byJob[k].pay); });
     const totals = {
       hours: round2(Object.values(byJob).reduce((t, v) => t + (v.hours || 0), 0)),
       pay: round2(Object.values(byJob).reduce((t, v) => t + (v.pay || 0), 0)),
     };
-
     return { perShift, byJob, totals };
   }, [shifts]);
 
-	// Import 콜백들
-	const handleImportReplace = (imported) => {
-		dispatch({ type: "replaceAllShifts", value: imported });
-	};
-	const handleImportAppend = (imported) => {
-		dispatch({ type: "appendShifts", value: imported });
-	};
-	const handleReorder = (fromIndex, toIndex) => {
-    dispatch({ type: "reorderShifts", fromIndex, toIndex });
-  };
+  const handleImportReplace = (imported) => dispatch({ type: "replaceAllShifts", value: imported });
+  const handleImportAppend  = (imported) => dispatch({ type: "appendShifts", value: imported });
+  const handleReorder       = (fromIndex, toIndex) => dispatch({ type: "reorderShifts", fromIndex, toIndex });
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
-          <p className="text-sm text-gray-600">데스크탑 우선 · 서로 다른 시급/휴게시간을 한 번에 계산</p>
-        </div>
+        <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Desktop-first · Calculate paid hours & wages across multiple jobs
+            </p>
+          </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <div className="text-xs text-gray-600">project: part_time_pay_calculator</div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="text-xs text-gray-600 dark:text-gray-300">project: part_time_pay_calculator</div>
             <div className="flex gap-2 items-center">
               <button
                 className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
@@ -169,17 +155,25 @@ export default function App() {
               >
                 {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
               </button>
+              <button
+                className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
+                onClick={() => dispatch({ type: "resetAll" })}
+                title="Clear all local data"
+              >
+                Clear local data
+              </button>
               <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
                 Auto-save: ON
               </span>
-            </div>'
-          <CsvControls
-            shifts={shifts}
-            onImportReplace={handleImportReplace}
-            onImportAppend={handleImportAppend}
-          />
-        </div>
-      </header>
+            </div>
+            <CsvControls
+              shifts={shifts}
+              onImportReplace={handleImportReplace}
+              onImportAppend={handleImportAppend}
+            />
+          </div>
+        </header>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-1">
             <Settings
@@ -196,12 +190,12 @@ export default function App() {
 
         <section className="bg-white dark:bg-gray-900 rounded-2xl shadow p-4 space-y-3 border border-transparent dark:border-gray-800">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">근무 기록</h2>
+            <h2 className="font-semibold">Shifts</h2>
             <button
-              className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm"
+              className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-black"
               onClick={() => dispatch({ type: "addShift" })}
             >
-              + 추가
+              + Add
             </button>
           </div>
           <ShiftTable
@@ -211,9 +205,13 @@ export default function App() {
             onUpdate={(id, patch) => dispatch({ type: "updateShift", id, patch })}
             onAdd={() => dispatch({ type: "addShift" })}
             onRemove={(id) => dispatch({ type: "removeShift", id })}
-						onReorder={handleReorder}
+            onReorder={handleReorder}
           />
         </section>
+
+        <footer className="text-xs text-gray-500 pt-2">
+          ※ Supports overnight shifts (crossing midnight). Amounts rounded to 2 decimals.
+        </footer>
       </div>
     </div>
   );
