@@ -38,8 +38,8 @@ export const STRINGS = {
     langKorean: "🇰🇷 한국어",
 		sortByDate: "Auto-sort",
 		thScheduledHours: "Scheduled hours",
-		minBreakMinutes: "break",
-		thresholdHold: "thresholdHold",
+		minBreakMinutes: "Break Time",
+		thresholdHold: "Break Required",
 		enabled: "Enabled",
   },
   ko: {
@@ -82,7 +82,7 @@ export const STRINGS = {
 		sortByDate: "자동정렬",
 		thScheduledHours: "스케줄시간",
 		minBreakMinutes: "휴게시간",
-		thresholdHold: "임계값",
+		thresholdHold: "휴게시간 적용 여부",
 		enabled: "사용",
   },
 };

@@ -411,7 +411,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-900 text-sm border hover:bg-blue-200"
                 onClick={handleFullExport}
               >
-                Full Backup (JSON)
+                Save as JSON
               </button>
 
               <input
@@ -425,7 +425,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-900 text-sm border hover:bg-blue-200"
                 onClick={handleFullImportClick}
               >
-                Restore from JSON
+                Load from JSON
               </button>
             </div>
 
