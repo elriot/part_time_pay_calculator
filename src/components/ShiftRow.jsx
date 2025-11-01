@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { IoTrashBin, IoTrashBinOutline } from "react-icons/io5"
+import { IoTrashBin } from "react-icons/io5";
 import { useI18n } from "../hooks/useI18n";
 
 const minutesBetween = (start, end) => {
@@ -31,7 +31,6 @@ export default function ShiftRow({
     const paidH = paidMin / 60;
     const pay = round2(paidH * effectiveRate);
     return { scheduledHours: round2(scheduledH), paidHours: round2(paidH), pay };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift.start, shift.end, shift.unpaidBreakMin, effectiveRate, policy?.enabled, policy?.thresholdHours, policy?.minBreakMin]);
 
   const inputBase = "border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100";
@@ -85,10 +84,7 @@ export default function ShiftRow({
                      dark:text-red-300 dark:hover:text-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/30
                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 dark:focus:ring-offset-gray-900"
         >
-					<IoTrashBin/>
-          {/* <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-            <path d="M6 8.5a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-1.5 0v-6A.75.75 0 0 1 6 8.5Zm4 .75a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 1.5 0v-6Zm2.75-.75a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-1.5 0v-6a.75.75 0 0 1 .75-.75ZM3.25 5.5A.75.75 0 0 1 4 4.75h3.19l.28-.56a1.5 1.5 0 0 1 1.34-.84h2.38c.58 0 1.11.33 1.36.84l.25.56H16a.75.75 0 0 1 0 1.5h-.75v8A2.75 2.75 0 0 1 12.5 17.5h-5A2.75 2.75 0 0 1 4.75 15V6.25H4a.75.75 0 0 1-.75-.75Zm2 1.5V15c0 .69.56 1.25 1.25 1.25h5c.69 0 1.25-.56 1.25-1.25V7H5.25Z"/>
-          </svg> */}
+          <IoTrashBin />
         </button>
       </td>
     </tr>
