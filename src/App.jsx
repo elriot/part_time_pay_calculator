@@ -7,6 +7,12 @@ import { useI18n } from "./hooks/useI18n";
 import "./App.css";
 
 const THEME_KEY = "ptpc_theme";
+const LANGUAGE_LABELS = {
+  en: "langEnglish",
+  ko: "langKorean",
+  ja: "langJapanese",
+};
+const LANGUAGE_CODES = Object.keys(LANGUAGE_LABELS);
 function useTheme() {
   const getInitial = () => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -191,7 +197,6 @@ function reducer(state, action) {
       };
 
     case "setJobRate": {
-      const old = state.jobs.find((j) => j.id === action.jobId);
       const newRate = Number(action.rate) || 0;
       const jobs = state.jobs.map((j) =>
         j.id === action.jobId ? { ...j, rate: newRate } : j
@@ -318,7 +323,7 @@ export default function App() {
       const data = JSON.parse(text);
       dispatch({ type: "restoreAll", value: data });
     } catch (err) {
-      alert("Invalid backup file.");
+      alert(t("invalidBackup"));
       console.error(err);
     } finally {
       e.target.value = ""; // 같은 파일 다시 선택 가능하게
@@ -361,10 +366,6 @@ export default function App() {
     return { byJob, totals };
   }, [shifts, jobs]);
 
-  const handleImportReplace = (imported) =>
-    dispatch({ type: "replaceAllShifts", value: imported });
-  const handleImportAppend = (imported) =>
-    dispatch({ type: "appendShifts", value: imported });
   const handleReorder = (fromIndex, toIndex) =>
     dispatch({ type: "reorderShifts", fromIndex, toIndex });
 
@@ -374,7 +375,7 @@ export default function App() {
         {/* 헤더 생략 — 기존 그대로 */}
         <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
+            <h1 className="text-2xl font-bold">{t("appTitle")}</h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {t("appSubtitle")}
             </p>
@@ -390,12 +391,20 @@ export default function App() {
               >
                 {theme === "dark" ? t("themeLight") : t("themeDark")}
               </button>
-              <button
-                className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
-                onClick={() => setLang(lang === "en" ? "ko" : "en")}
-              >
-                {lang === "en" ? t("langKorean") : t("langEnglish")}
-              </button>
+              <label className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
+                <span>{t("language")}:</span>
+                <select
+                  className="rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 px-1 py-0.5"
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                >
+                  {LANGUAGE_CODES.map((code) => (
+                    <option key={code} value={code}>
+                      {t(LANGUAGE_LABELS[code] ?? LANGUAGE_LABELS.en)}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
                 onClick={() => dispatch({ type: "resetAll" })}
@@ -411,7 +420,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-900 text-sm border hover:bg-blue-200"
                 onClick={handleFullExport}
               >
-                Save as JSON
+                {t("saveJson")}
               </button>
 
               <input
@@ -425,7 +434,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-900 text-sm border hover:bg-blue-200"
                 onClick={handleFullImportClick}
               >
-                Load from JSON
+                {t("loadJson")}
               </button>
             </div>
 
