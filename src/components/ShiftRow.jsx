@@ -31,6 +31,7 @@ export default function ShiftRow({
     const paidH = paidMin / 60;
     const pay = round2(paidH * effectiveRate);
     return { scheduledHours: round2(scheduledH), paidHours: round2(paidH), pay };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift.start, shift.end, shift.unpaidBreakMin, effectiveRate, policy?.enabled, policy?.thresholdHours, policy?.minBreakMin]);
 
   const inputBase = "border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100";
