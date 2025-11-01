@@ -18,10 +18,11 @@ export default function Settings({
 
   return (
     <section className="rounded-2xl border border-gray-100 bg-white dark:bg-gray-950 shadow p-6 space-y-6">
+      {/* 헤더 */}
       <div>
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">{t("settings")}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {t("settingsDescription")}
+          Manage job names, wages, and auto break rules
         </p>
       </div>
 
@@ -57,14 +58,14 @@ export default function Settings({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block">
                   <span className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-                    {t("jobName", { k: j.id })}
+                    {`Job ${j.id} name`}
                   </span>
                   <input
                     type="text"
                     className={inputBase}
                     value={j.name}
                     onChange={(e) => onSetJobName(j.id, e.target.value)}
-                    placeholder={t("jobNamePlaceholder")}
+                    placeholder="Company name"
                   />
                 </label>
 
@@ -123,8 +124,8 @@ export default function Settings({
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="block">
-                  <span className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-                      {t("thresholdHours")} ({t("unitHours")})
+                    <span className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+                      {t("thresholdHours")} (hours)
                     </span>
                     <input
                       type="number"
@@ -142,8 +143,8 @@ export default function Settings({
                   </label>
 
                   <label className="block">
-                  <span className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-                      {t("minBreakMinutes")} ({t("unitMinutes")})
+                    <span className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+                      {t("minBreakMinutes")} (minutes)
                     </span>
                     <input
                       type="number"
