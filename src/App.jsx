@@ -2,11 +2,16 @@ import React, { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import Settings from "./components/Settings";
 import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
-import CsvControls from "./components/CsvControls";
 import { useI18n } from "./hooks/useI18n";
 import "./App.css";
 
 const THEME_KEY = "ptpc_theme";
+const LANGUAGE_LABELS = {
+  en: "langEnglish",
+  ko: "langKorean",
+  ja: "langJapanese",
+};
+const LANGUAGE_CODES = Object.keys(LANGUAGE_LABELS);
 function useTheme() {
   const getInitial = () => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -37,6 +42,27 @@ const minutesBetween = (start, end) => {
     e = eh * 60 + em;
   if (e < s) e += 24 * 60;
   return e - s;
+};
+
+const WEEK_UNKNOWN_KEY = "unknown";
+
+const getWeekBoundary = (dateStr) => {
+  if (!dateStr) {
+    return { key: WEEK_UNKNOWN_KEY, startIso: null, endIso: null };
+  }
+  const base = new Date(`${dateStr}T00:00:00Z`);
+  if (Number.isNaN(base.getTime())) {
+    return { key: WEEK_UNKNOWN_KEY, startIso: null, endIso: null };
+  }
+  const day = base.getUTCDay();
+  const diff = (day + 6) % 7; // Shift so Monday is start of week
+  const start = new Date(base);
+  start.setUTCDate(start.getUTCDate() - diff);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const startIso = start.toISOString().slice(0, 10);
+  const endIso = end.toISOString().slice(0, 10);
+  return { key: `${startIso}_${endIso}`, startIso, endIso };
 };
 
 /** 초기 상태: 회사별 breakPolicy 포함 */
@@ -191,7 +217,6 @@ function reducer(state, action) {
       };
 
     case "setJobRate": {
-      const old = state.jobs.find((j) => j.id === action.jobId);
       const newRate = Number(action.rate) || 0;
       const jobs = state.jobs.map((j) =>
         j.id === action.jobId ? { ...j, rate: newRate } : j
@@ -318,15 +343,16 @@ export default function App() {
       const data = JSON.parse(text);
       dispatch({ type: "restoreAll", value: data });
     } catch (err) {
-      alert("Invalid backup file.");
+      alert(t("invalidBackup"));
       console.error(err);
     } finally {
       e.target.value = ""; // 같은 파일 다시 선택 가능하게
     }
   };
   // 합계 계산: 회사별 정책 적용
-  const { byJob, totals } = useMemo(() => {
+  const { byJob, totals, weeklyTotals } = useMemo(() => {
     const byJob = {};
+    const byWeek = {};
     for (const s of shifts) {
       const job = jobs.find((j) => j.id === (s.jobId ?? s.job));
       const rate = Number(job?.rate ?? 0);
@@ -342,11 +368,23 @@ export default function App() {
       const paidMin = Math.max(0, scheduledMin - effectiveBreak);
       const hours = paidMin / 60;
       const pay = round2(hours * rate);
+      const week = getWeekBoundary(s.date);
 
       const key = s.jobId ?? s.job ?? "A";
       if (!byJob[key]) byJob[key] = { hours: 0, pay: 0 };
       byJob[key].hours += hours;
       byJob[key].pay += pay;
+
+      if (!byWeek[week.key]) {
+        byWeek[week.key] = {
+          hours: 0,
+          pay: 0,
+          startIso: week.startIso,
+          endIso: week.endIso,
+        };
+      }
+      byWeek[week.key].hours += hours;
+      byWeek[week.key].pay += pay;
     }
     Object.keys(byJob).forEach((k) => {
       byJob[k].hours = round2(byJob[k].hours);
@@ -358,13 +396,25 @@ export default function App() {
       ),
       pay: round2(Object.values(byJob).reduce((t, v) => t + (v.pay || 0), 0)),
     };
-    return { byJob, totals };
+    const weeklyTotals = Object.entries(byWeek)
+      .map(([id, value]) => ({
+        id,
+        startIso: value.startIso,
+        endIso: value.endIso,
+        hours: round2(value.hours),
+        pay: round2(value.pay),
+      }))
+      .sort((a, b) => {
+        if (a.startIso && b.startIso) {
+          return b.startIso.localeCompare(a.startIso);
+        }
+        if (a.startIso) return -1;
+        if (b.startIso) return 1;
+        return a.id.localeCompare(b.id);
+      });
+    return { byJob, totals, weeklyTotals };
   }, [shifts, jobs]);
 
-  const handleImportReplace = (imported) =>
-    dispatch({ type: "replaceAllShifts", value: imported });
-  const handleImportAppend = (imported) =>
-    dispatch({ type: "appendShifts", value: imported });
   const handleReorder = (fromIndex, toIndex) =>
     dispatch({ type: "reorderShifts", fromIndex, toIndex });
 
@@ -374,7 +424,7 @@ export default function App() {
         {/* 헤더 생략 — 기존 그대로 */}
         <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Part-time Pay Calculator</h1>
+            <h1 className="text-2xl font-bold">{t("appTitle")}</h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {t("appSubtitle")}
             </p>
@@ -390,12 +440,20 @@ export default function App() {
               >
                 {theme === "dark" ? t("themeLight") : t("themeDark")}
               </button>
-              <button
-                className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
-                onClick={() => setLang(lang === "en" ? "ko" : "en")}
-              >
-                {lang === "en" ? t("langKorean") : t("langEnglish")}
-              </button>
+              <label className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
+                <span>{t("language")}:</span>
+                <select
+                  className="rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 px-1 py-0.5"
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                >
+                  {LANGUAGE_CODES.map((code) => (
+                    <option key={code} value={code}>
+                      {t(LANGUAGE_LABELS[code] ?? LANGUAGE_LABELS.en)}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 className="px-2 py-1 text-xs rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
                 onClick={() => dispatch({ type: "resetAll" })}
@@ -411,7 +469,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-900 text-sm border hover:bg-blue-200"
                 onClick={handleFullExport}
               >
-                Save as JSON
+                {t("saveJson")}
               </button>
 
               <input
@@ -425,7 +483,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-900 text-sm border hover:bg-blue-200"
                 onClick={handleFullImportClick}
               >
-                Load from JSON
+                {t("loadJson")}
               </button>
             </div>
 
@@ -464,6 +522,7 @@ export default function App() {
             jobs={jobs}
             byJob={byJob}
             totals={totals}
+            weeklyTotals={weeklyTotals}
           />
         </div>
 
