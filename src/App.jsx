@@ -44,6 +44,27 @@ const minutesBetween = (start, end) => {
   return e - s;
 };
 
+const WEEK_UNKNOWN_KEY = "unknown";
+
+const getWeekBoundary = (dateStr) => {
+  if (!dateStr) {
+    return { key: WEEK_UNKNOWN_KEY, startIso: null, endIso: null };
+  }
+  const base = new Date(`${dateStr}T00:00:00Z`);
+  if (Number.isNaN(base.getTime())) {
+    return { key: WEEK_UNKNOWN_KEY, startIso: null, endIso: null };
+  }
+  const day = base.getUTCDay();
+  const diff = (day + 6) % 7; // Shift so Monday is start of week
+  const start = new Date(base);
+  start.setUTCDate(start.getUTCDate() - diff);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const startIso = start.toISOString().slice(0, 10);
+  const endIso = end.toISOString().slice(0, 10);
+  return { key: `${startIso}_${endIso}`, startIso, endIso };
+};
+
 /** 초기 상태: 회사별 breakPolicy 포함 */
 const initialState = {
   currency: "CAD",
@@ -329,8 +350,9 @@ export default function App() {
     }
   };
   // 합계 계산: 회사별 정책 적용
-  const { byJob, totals } = useMemo(() => {
+  const { byJob, totals, weeklyTotals } = useMemo(() => {
     const byJob = {};
+    const byWeek = {};
     for (const s of shifts) {
       const job = jobs.find((j) => j.id === (s.jobId ?? s.job));
       const rate = Number(job?.rate ?? 0);
@@ -346,11 +368,23 @@ export default function App() {
       const paidMin = Math.max(0, scheduledMin - effectiveBreak);
       const hours = paidMin / 60;
       const pay = round2(hours * rate);
+      const week = getWeekBoundary(s.date);
 
       const key = s.jobId ?? s.job ?? "A";
       if (!byJob[key]) byJob[key] = { hours: 0, pay: 0 };
       byJob[key].hours += hours;
       byJob[key].pay += pay;
+
+      if (!byWeek[week.key]) {
+        byWeek[week.key] = {
+          hours: 0,
+          pay: 0,
+          startIso: week.startIso,
+          endIso: week.endIso,
+        };
+      }
+      byWeek[week.key].hours += hours;
+      byWeek[week.key].pay += pay;
     }
     Object.keys(byJob).forEach((k) => {
       byJob[k].hours = round2(byJob[k].hours);
@@ -362,7 +396,23 @@ export default function App() {
       ),
       pay: round2(Object.values(byJob).reduce((t, v) => t + (v.pay || 0), 0)),
     };
-    return { byJob, totals };
+    const weeklyTotals = Object.entries(byWeek)
+      .map(([id, value]) => ({
+        id,
+        startIso: value.startIso,
+        endIso: value.endIso,
+        hours: round2(value.hours),
+        pay: round2(value.pay),
+      }))
+      .sort((a, b) => {
+        if (a.startIso && b.startIso) {
+          return b.startIso.localeCompare(a.startIso);
+        }
+        if (a.startIso) return -1;
+        if (b.startIso) return 1;
+        return a.id.localeCompare(b.id);
+      });
+    return { byJob, totals, weeklyTotals };
   }, [shifts, jobs]);
 
   const handleReorder = (fromIndex, toIndex) =>
@@ -472,6 +522,7 @@ export default function App() {
             jobs={jobs}
             byJob={byJob}
             totals={totals}
+            weeklyTotals={weeklyTotals}
           />
         </div>
 

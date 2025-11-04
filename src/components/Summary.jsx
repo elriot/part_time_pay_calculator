@@ -1,7 +1,12 @@
 import React from "react";
 import { useI18n } from "../hooks/useI18n";
 
-export default function Summary({ currency, jobs, byJob, totals }) {
+const formatWeekRange = (startIso, endIso, fallback) => {
+  if (startIso && endIso) return `${startIso} ~ ${endIso}`;
+  return fallback;
+};
+
+export default function Summary({ currency, jobs, byJob, totals, weeklyTotals = [] }) {
   const { t } = useI18n();
 
   return (
@@ -25,6 +30,26 @@ export default function Summary({ currency, jobs, byJob, totals }) {
           <div className="text-sm">{currency} {(totals.pay ?? 0).toFixed(2)}</div>
         </div>
       </div>
+      {weeklyTotals.length > 0 && (
+        <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">{t("weeklyTotals")}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {weeklyTotals.map((week) => (
+              <div key={week.id} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800">
+                <div className="text-gray-600 dark:text-gray-300 text-sm mb-1">
+                  {formatWeekRange(week.startIso, week.endIso, t("unknownWeek"))}
+                </div>
+                <div className="text-lg font-semibold">
+                  {(week.hours ?? 0).toFixed(2)} h
+                </div>
+                <div className="text-sm">
+                  {currency} {(week.pay ?? 0).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
