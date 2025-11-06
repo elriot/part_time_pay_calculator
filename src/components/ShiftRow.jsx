@@ -13,7 +13,7 @@ const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export default function ShiftRow({
   rowIndex, currency, jobs, shift, onChange, onRemove,
-  rowDragProps, isDragging, isOver,
+  rowDragProps, isDragging, isOver, rowClassName = "",
 }) {
   const { t } = useI18n();
 
@@ -36,7 +36,12 @@ export default function ShiftRow({
   const inputBase = "border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100";
 
   return (
-    <tr className={`border-t border-gray-200 dark:border-gray-800 ${isDragging ? "opacity-50" : ""} ${isOver ? "outline outline-2 outline-blue-400/50" : ""}`} {...rowDragProps}>
+    <tr
+      className={`border-t border-gray-200 dark:border-gray-800 ${rowClassName} ${
+        isDragging ? "opacity-50" : ""
+      } ${isOver ? "outline outline-2 outline-blue-400/50" : ""}`}
+      {...rowDragProps}
+    >
       <td className="py-1.5 pr-2 text-right tabular-nums w-10 text-gray-500 dark:text-gray-400">{rowIndex + 1}</td>
       <td className="py-1.5 pr-2 cursor-grab active:cursor-grabbing select-none text-gray-400 dark:text-gray-500">↕︎</td>
 

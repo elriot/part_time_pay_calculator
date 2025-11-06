@@ -4,6 +4,7 @@ import ShiftTable from "./components/ShiftTable";
 import Summary from "./components/Summary";
 import { useI18n } from "./hooks/useI18n";
 import "./App.css";
+import { getWeekBoundary } from "./utils/week";
 
 const THEME_KEY = "ptpc_theme";
 const LANGUAGE_LABELS = {
@@ -42,27 +43,6 @@ const minutesBetween = (start, end) => {
     e = eh * 60 + em;
   if (e < s) e += 24 * 60;
   return e - s;
-};
-
-const WEEK_UNKNOWN_KEY = "unknown";
-
-const getWeekBoundary = (dateStr) => {
-  if (!dateStr) {
-    return { key: WEEK_UNKNOWN_KEY, startIso: null, endIso: null };
-  }
-  const base = new Date(`${dateStr}T00:00:00Z`);
-  if (Number.isNaN(base.getTime())) {
-    return { key: WEEK_UNKNOWN_KEY, startIso: null, endIso: null };
-  }
-  const day = base.getUTCDay();
-  const diff = (day + 6) % 7; // Shift so Monday is start of week
-  const start = new Date(base);
-  start.setUTCDate(start.getUTCDate() - diff);
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 6);
-  const startIso = start.toISOString().slice(0, 10);
-  const endIso = end.toISOString().slice(0, 10);
-  return { key: `${startIso}_${endIso}`, startIso, endIso };
 };
 
 /** 초기 상태: 회사별 breakPolicy 포함 */
@@ -358,6 +338,7 @@ export default function App() {
       const rate = Number(job?.rate ?? 0);
       const policy = job?.breakPolicy;
       const scheduledMin = minutesBetween(s.start, s.end);
+      const scheduledHours = scheduledMin / 60;
       const thresholdMin = Number(policy?.thresholdHours ?? 0) * 60;
       const policyMin =
         policy?.enabled && scheduledMin >= thresholdMin
@@ -381,10 +362,12 @@ export default function App() {
           pay: 0,
           startIso: week.startIso,
           endIso: week.endIso,
+          scheduledHours: 0,
         };
       }
       byWeek[week.key].hours += hours;
       byWeek[week.key].pay += pay;
+      byWeek[week.key].scheduledHours += scheduledHours;
     }
     Object.keys(byJob).forEach((k) => {
       byJob[k].hours = round2(byJob[k].hours);
@@ -403,6 +386,7 @@ export default function App() {
         endIso: value.endIso,
         hours: round2(value.hours),
         pay: round2(value.pay),
+        scheduledHours: round2(value.scheduledHours ?? 0),
       }))
       .sort((a, b) => {
         if (a.startIso && b.startIso) {

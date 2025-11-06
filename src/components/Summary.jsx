@@ -1,10 +1,6 @@
 import React from "react";
 import { useI18n } from "../hooks/useI18n";
-
-const formatWeekRange = (startIso, endIso, fallback) => {
-  if (startIso && endIso) return `${startIso} ~ ${endIso}`;
-  return fallback;
-};
+import { formatWeekRange } from "../utils/week";
 
 export default function Summary({ currency, jobs, byJob, totals, weeklyTotals = [] }) {
   const { t } = useI18n();
@@ -39,8 +35,15 @@ export default function Summary({ currency, jobs, byJob, totals, weeklyTotals = 
                 <div className="text-gray-600 dark:text-gray-300 text-sm mb-1">
                   {formatWeekRange(week.startIso, week.endIso, t("unknownWeek"))}
                 </div>
-                <div className="text-lg font-semibold">
-                  {(week.hours ?? 0).toFixed(2)} h
+                <div className="text-lg font-semibold flex flex-wrap gap-1 items-baseline">
+                  <span>
+                    {(week.hours ?? 0).toFixed(2)} {t("unitHours")}
+                  </span>
+                  {typeof week.scheduledHours === "number" && (
+                    <span className="text-sm font-normal text-gray-500 dark:text-gray-300">
+                      ({t("scheduleLabel")}: {(week.scheduledHours ?? 0).toFixed(2)} {t("unitHours")})
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm">
                   {currency} {(week.pay ?? 0).toFixed(2)}
