@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import ShiftRow from "./ShiftRow";
 import { useI18n } from "../hooks/useI18n";
+import { formatWeekRange, getWeekBoundary } from "../utils/week";
 
 export default function ShiftTable({
   currency, jobs, shifts, onUpdate, onAdd, onRemove, onReorder,
@@ -9,10 +10,39 @@ export default function ShiftTable({
   const [draggingId, setDraggingId] = useState(null);
   const [overId, setOverId] = useState(null);
 
+  const WEEK_BACKGROUND = [
+    "bg-white dark:bg-gray-900/40",
+    "bg-gray-50 dark:bg-gray-900/60",
+  ];
+
   const idToIndex = useMemo(() => {
     const map = new Map();
     shifts.forEach((s, i) => map.set(s.id, i));
     return map;
+  }, [shifts]);
+
+  const enhancedShifts = useMemo(() => {
+    const weekOrder = new Map();
+    const processedCount = new Map();
+
+    return shifts.map((shift, idx) => {
+      const boundary = getWeekBoundary(shift.date);
+      if (!weekOrder.has(boundary.key)) {
+        weekOrder.set(boundary.key, weekOrder.size);
+      }
+      const weekIndex = weekOrder.get(boundary.key);
+      const seen = processedCount.get(boundary.key) ?? 0;
+      processedCount.set(boundary.key, seen + 1);
+
+      return {
+        shift,
+        idx,
+        weekIndex,
+        isWeekStart: seen === 0,
+        weekStartIso: boundary.startIso,
+        weekEndIso: boundary.endIso,
+      };
+    });
   }, [shifts]);
 
   const handleDragStart = (id) => setDraggingId(id);
@@ -46,26 +76,37 @@ export default function ShiftTable({
           </tr>
         </thead>
         <tbody onDrop={finishDrag} onDragEnd={finishDrag}>
-          {shifts.map((shift, idx) => {
+          {enhancedShifts.map(({ shift, idx, weekIndex, isWeekStart, weekStartIso, weekEndIso }) => {
             const isDragging = draggingId === shift.id;
             const isOver = overId === shift.id && draggingId !== overId;
+            const weekBgClass = WEEK_BACKGROUND[weekIndex % WEEK_BACKGROUND.length];
+            const weekLabel = formatWeekRange(weekStartIso, weekEndIso, t("unknownWeek"));
             return (
-              <ShiftRow
-                key={shift.id}
-                rowIndex={idx}
-                currency={currency}
-                jobs={jobs}
-                shift={shift}
-                onChange={(patch) => onUpdate(shift.id, patch)}
-                onRemove={() => onRemove(shift.id)}
-                rowDragProps={{
-                  draggable: true,
-                  onDragStart: () => handleDragStart(shift.id),
-                  onDragOver: (e) => handleDragOver(e, shift.id),
-                }}
-                isDragging={isDragging}
-                isOver={isOver}
-              />
+              <React.Fragment key={shift.id}>
+                {isWeekStart && (
+                  <tr className={`text-xs text-gray-500 dark:text-gray-400 ${weekBgClass}`}>
+                    <td colSpan={10} className="pt-4 pb-1 font-semibold tracking-wide uppercase">
+                      {t("weekLabel")}: {weekLabel}
+                    </td>
+                  </tr>
+                )}
+                <ShiftRow
+                  rowIndex={idx}
+                  currency={currency}
+                  jobs={jobs}
+                  shift={shift}
+                  onChange={(patch) => onUpdate(shift.id, patch)}
+                  onRemove={() => onRemove(shift.id)}
+                  rowDragProps={{
+                    draggable: true,
+                    onDragStart: () => handleDragStart(shift.id),
+                    onDragOver: (e) => handleDragOver(e, shift.id),
+                  }}
+                  isDragging={isDragging}
+                  isOver={isOver}
+                  rowClassName={weekBgClass}
+                />
+              </React.Fragment>
             );
           })}
         </tbody>
