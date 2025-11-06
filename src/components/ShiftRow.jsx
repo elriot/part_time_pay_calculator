@@ -24,8 +24,10 @@ export default function ShiftRow({
   const { scheduledHours, paidHours, pay } = useMemo(() => {
     const scheduledMin = minutesBetween(shift.start, shift.end);
     const thresholdMin = Number(policy?.thresholdHours ?? 0) * 60;
-    const policyMin = policy?.enabled && scheduledMin >= thresholdMin ? Number(policy?.minBreakMin ?? 0) : 0;
-    const effectiveBreak = Math.max(Number(shift.unpaidBreakMin) || 0, policyMin);
+    const manualBreak = Number(shift.unpaidBreakMin) || 0;
+    const shouldApplyPolicy = policy?.enabled && scheduledMin >= thresholdMin;
+    const policyMin = shouldApplyPolicy ? Number(policy?.minBreakMin ?? 0) : 0;
+    const effectiveBreak = shouldApplyPolicy ? Math.max(manualBreak, policyMin) : manualBreak;
     const paidMin = Math.max(0, scheduledMin - effectiveBreak);
     const scheduledH = scheduledMin / 60;
     const paidH = paidMin / 60;
@@ -55,10 +57,7 @@ export default function ShiftRow({
           value={shift.jobId ?? shift.job}
           onChange={(e) => {
             const jobId = e.target.value;
-            const j = jobs.find((x) => x.id === jobId);
-            const defaultBreak = j?.breakPolicy?.enabled ? (j.breakPolicy.minBreakMin ?? 0) : (shift.unpaidBreakMin ?? 0);
-            // 잡 변경 시, 기본 휴게로 초기화하고 싶으면 unpaidBreakMin도 함께 업데이트 (원치 않으면 { jobId }만)
-            onChange({ jobId, unpaidBreakMin: defaultBreak });
+            onChange({ jobId });
           }}
         >
           {jobs.map((j) => (
