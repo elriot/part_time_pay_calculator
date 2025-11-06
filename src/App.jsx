@@ -86,8 +86,33 @@ function reviveState(raw) {
         }))
       : initialState.jobs;
 
+    const jobMap = new Map(jobs.map((job) => [job.id, job]));
     const shifts = Array.isArray(p.shifts)
-      ? p.shifts.map((s) => ({ ...s, jobId: s.jobId ?? s.job ?? "A" }))
+      ? p.shifts.map((s) => {
+          const jobId = s.jobId ?? s.job ?? "A";
+          const job = jobMap.get(jobId);
+          const start = s.start ?? "09:00";
+          const end = s.end ?? "17:00";
+          const scheduledMin = minutesBetween(start, end);
+          const thresholdMin =
+            Number(job?.breakPolicy?.thresholdHours ?? 0) * 60;
+          const shouldApplyPolicy =
+            job?.breakPolicy?.enabled && scheduledMin >= thresholdMin;
+          const unpaidBreakMinRaw = Number(s.unpaidBreakMin) || 0;
+          const unpaidBreakMin =
+            job?.breakPolicy?.enabled && !shouldApplyPolicy
+              ? 0
+              : unpaidBreakMinRaw;
+          return {
+            ...s,
+            id: s.id ?? uid(),
+            date: s.date ?? todayIso(),
+            jobId,
+            start,
+            end,
+            unpaidBreakMin,
+          };
+        })
       : [];
 
     return {
@@ -112,16 +137,13 @@ function emptyShift(jobs) {
     rate: 20,
     breakPolicy: { enabled: true, minBreakMin: 30 },
   };
-  const defaultBreak = j.breakPolicy?.enabled
-    ? j.breakPolicy.minBreakMin ?? 30
-    : 0;
   return {
     id: uid(),
     date: todayIso(),
     jobId: j.id,
     start: "09:00",
     end: "17:00",
-    unpaidBreakMin: defaultBreak,
+    unpaidBreakMin: 0,
     rate: j.rate, // (행에서는 안 쓰지만 CSV 호환용으로 남겨둠)
   };
 }
@@ -162,18 +184,37 @@ function coerceFromBackup(payload) {
         },
       ];
 
+  const jobMap = new Map(jobs.map((job) => [job.id, job]));
+
   const shifts = Array.isArray(payload?.shifts)
-    ? payload.shifts.map((s) => ({
-        id:
-          s.id ??
-          (crypto?.randomUUID?.() || Math.random().toString(36).slice(2)),
-        date: s.date ?? new Date().toISOString().slice(0, 10),
-        jobId: s.jobId ?? s.job ?? "A",
-        start: s.start ?? "09:00",
-        end: s.end ?? "17:00",
-        unpaidBreakMin: Number(s.unpaidBreakMin) || 0,
-        // rate 필드는 무시(계산은 jobs.rate 사용)
-      }))
+    ? payload.shifts.map((s) => {
+        const jobId = s.jobId ?? s.job ?? "A";
+        const job = jobMap.get(jobId);
+        const start = s.start ?? "09:00";
+        const end = s.end ?? "17:00";
+        const scheduledMin = minutesBetween(start, end);
+        const thresholdMin =
+          Number(job?.breakPolicy?.thresholdHours ?? 0) * 60;
+        const shouldApplyPolicy =
+          job?.breakPolicy?.enabled && scheduledMin >= thresholdMin;
+        const unpaidBreakMinRaw = Number(s.unpaidBreakMin) || 0;
+        const unpaidBreakMin =
+          job?.breakPolicy?.enabled && !shouldApplyPolicy
+            ? 0
+            : unpaidBreakMinRaw;
+
+        return {
+          id:
+            s.id ??
+            (crypto?.randomUUID?.() || Math.random().toString(36).slice(2)),
+          date: s.date ?? new Date().toISOString().slice(0, 10),
+          jobId,
+          start,
+          end,
+          unpaidBreakMin,
+          // rate 필드는 무시(계산은 jobs.rate 사용)
+        };
+      })
     : [];
 
   return { currency, jobs, shifts };
@@ -340,12 +381,16 @@ export default function App() {
       const scheduledMin = minutesBetween(s.start, s.end);
       const scheduledHours = scheduledMin / 60;
       const thresholdMin = Number(policy?.thresholdHours ?? 0) * 60;
-      const policyMin =
-        policy?.enabled && scheduledMin >= thresholdMin
-          ? Number(policy?.minBreakMin ?? 0)
-          : 0;
+      const manualBreak = Number(s.unpaidBreakMin) || 0;
+      const shouldApplyPolicy =
+        policy?.enabled && scheduledMin >= thresholdMin;
+      const policyMin = shouldApplyPolicy
+        ? Number(policy?.minBreakMin ?? 0)
+        : 0;
 
-      const effectiveBreak = Math.max(Number(s.unpaidBreakMin) || 0, policyMin);
+      const effectiveBreak = shouldApplyPolicy
+        ? Math.max(manualBreak, policyMin)
+        : manualBreak;
       const paidMin = Math.max(0, scheduledMin - effectiveBreak);
       const hours = paidMin / 60;
       const pay = round2(hours * rate);
